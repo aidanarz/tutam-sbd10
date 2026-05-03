@@ -6,7 +6,11 @@ import cors from 'cors';
 import routes from '../src/routes/index.js';
 import { initDb, dbMode } from '../src/config/db.js';
 
-await initDb();
+try {
+  await initDb();
+} catch (error) {
+  console.error('⚠️ API startup fallback mode:', error?.message || error);
+}
 
 const app = express();
 

@@ -9,11 +9,14 @@ import { neon } from '@neondatabase/serverless';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '../../data');
 const DB_PATH = join(DATA_DIR, 'chord_generator.json');
+const isServerless = Boolean(process.env.VERCEL);
 const CONNECTION_STRING = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
 const useNeon = Boolean(CONNECTION_STRING);
 const sql = useNeon ? neon(CONNECTION_STRING) : null;
 
-mkdirSync(DATA_DIR, { recursive: true });
+if (!isServerless) {
+  mkdirSync(DATA_DIR, { recursive: true });
+}
 
 const NOTES = [
   { id: 1, name: 'C', semitone: 0 },
@@ -35,9 +38,19 @@ const DEFAULT_DATA = {
   chord_progressions: [],
 };
 
+let inMemoryProgressions = [];
+
 function readDbFile() {
+  if (isServerless) {
+    return { notes: NOTES, chord_progressions: inMemoryProgressions };
+  }
+
   if (!existsSync(DB_PATH)) {
-    writeFileSync(DB_PATH, JSON.stringify(DEFAULT_DATA, null, 2));
+    try {
+      writeFileSync(DB_PATH, JSON.stringify(DEFAULT_DATA, null, 2));
+    } catch {
+      return { ...DEFAULT_DATA };
+    }
     return { ...DEFAULT_DATA };
   }
   try {
@@ -48,6 +61,11 @@ function readDbFile() {
 }
 
 function writeDbFile(data) {
+  if (isServerless) {
+    inMemoryProgressions = data?.chord_progressions || [];
+    return;
+  }
+
   writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 }
 
@@ -65,47 +83,51 @@ function toJsonArray(value) {
 }
 
 export async function initDb() {
-  if (!useNeon) {
-    readDbFile();
-    console.log('✅ Database ready at', DB_PATH);
-    return;
-  }
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS notes (
-      id INTEGER PRIMARY KEY,
-      name TEXT NOT NULL UNIQUE,
-      semitone INTEGER NOT NULL
-    );
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS chord_progressions (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      key_note TEXT NOT NULL,
-      scale TEXT NOT NULL DEFAULT 'major',
-      progression JSONB NOT NULL,
-      chord_names JSONB,
-      tempo INTEGER DEFAULT 120,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-  `;
-
-  const countRows = await sql`SELECT COUNT(*)::int AS count FROM notes;`;
-  const count = countRows?.[0]?.count ?? 0;
-
-  if (count === 0) {
-    for (const note of NOTES) {
-      await sql`
-        INSERT INTO notes (id, name, semitone)
-        VALUES (${note.id}, ${note.name}, ${note.semitone})
-        ON CONFLICT (id) DO NOTHING;
-      `;
+  try {
+    if (!useNeon) {
+      readDbFile();
+      console.log('✅ Database ready in fallback mode');
+      return;
     }
-  }
 
-  console.log('✅ Neon database ready');
+    await sql`
+      CREATE TABLE IF NOT EXISTS notes (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        semitone INTEGER NOT NULL
+      );
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS chord_progressions (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        key_note TEXT NOT NULL,
+        scale TEXT NOT NULL DEFAULT 'major',
+        progression JSONB NOT NULL,
+        chord_names JSONB,
+        tempo INTEGER DEFAULT 120,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+
+    const countRows = await sql`SELECT COUNT(*)::int AS count FROM notes;`;
+    const count = countRows?.[0]?.count ?? 0;
+
+    if (count === 0) {
+      for (const note of NOTES) {
+        await sql`
+          INSERT INTO notes (id, name, semitone)
+          VALUES (${note.id}, ${note.name}, ${note.semitone})
+          ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+    }
+
+    console.log('✅ Neon database ready');
+  } catch (error) {
+    console.error('⚠️ initDb fallback mode:', error.message || error);
+  }
 }
 
 export async function getNotes() {
@@ -174,4 +196,4 @@ export async function deleteProgressionById(id) {
   return (result?.length ?? 0) > 0;
 }
 
-export const dbMode = useNeon ? 'neon' : 'json';
+export const dbMode = useNeon ? 'neon' : (isServerless ? 'memory' : 'json');

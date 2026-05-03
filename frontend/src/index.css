@@ -1,0 +1,222 @@
+@import url('https://fonts.googleapis.com/css2?family=Didact+Gothic&family=Poiret+One&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #0b0b0d;
+    --bg-secondary: #141417;
+    --bg-card: #1a1a1f;
+    --bg-card-hover: #202026;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-active: rgba(255, 255, 255, 0.16);
+    --text-primary: #f3f4f6;
+    --text-secondary: #b8bcc6;
+    --text-muted: #7f8591;
+    --accent: #d1d5db;
+    --accent-glow: rgba(255, 255, 255, 0.08);
+    --cta: #e5e7eb;
+    --primary-dark: #111114;
+    --secondary: #cbd5e1;
+    --amber: #9ca3af;
+    --emerald: #9ca3af;
+    --rose: #b7bcc5;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Didact Gothic', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.26);
+  }
+
+  /* Left panel explicit scrollbar (visible) */
+  .left-panel {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .left-panel::-webkit-scrollbar {
+    width: 8px;
+  }
+  .left-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  /* Font display stack */
+  .font-display {
+    font-family: 'Poiret One', cursive;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border bg-[var(--bg-card)] border-[var(--border)] transition-all duration-300;
+    box-shadow:
+      10px 10px 24px rgba(0, 0, 0, 0.45),
+      -10px -10px 24px rgba(255, 255, 255, 0.03),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .card-hover {
+    @apply hover:bg-[var(--bg-card-hover)] hover:border-[var(--border-active)] transition-all duration-200 cursor-pointer;
+    box-shadow:
+      12px 12px 26px rgba(0, 0, 0, 0.5),
+      -12px -12px 26px rgba(255, 255, 255, 0.035),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.035);
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 rounded-xl font-medium text-sm bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)]
+           text-[var(--text-primary)] transition-all duration-300 flex items-center gap-2 cursor-pointer
+           active:translate-y-[1px] disabled:opacity-40 disabled:cursor-not-allowed;
+    box-shadow:
+      8px 8px 18px rgba(0, 0, 0, 0.45),
+      -8px -8px 18px rgba(255, 255, 255, 0.03),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 rounded-xl font-medium text-sm border border-[var(--border)]
+           text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-active)] 
+           transition-all duration-200 flex items-center gap-2 active:translate-y-[1px];
+    background: var(--bg-card);
+    box-shadow:
+      8px 8px 18px rgba(0, 0, 0, 0.38),
+      -8px -8px 18px rgba(255, 255, 255, 0.03),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .btn-danger {
+    @apply px-3 py-1.5 rounded-lg font-medium text-xs border border-[var(--border)]
+           text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] hover:border-[var(--border-active)]
+           transition-all duration-200 flex items-center gap-1.5 active:translate-y-[1px];
+    background: var(--bg-card);
+  }
+
+  .label {
+    @apply text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] font-display;
+  }
+
+  .note-tag {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-mono
+           bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)] font-medium;
+  }
+
+  .chord-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-mono font-semibold
+           bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)];
+  }
+
+  .glow-text {
+    text-shadow: 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  /* Piano key styles */
+  .piano-key-white {
+    @apply relative rounded-b-lg cursor-pointer
+           transition-all duration-100 flex items-end justify-center pb-2
+           border border-gray-300/50 select-none;
+    background: #e5e7eb;
+    box-shadow:
+      6px 6px 12px rgba(0, 0, 0, 0.45),
+      -6px -6px 12px rgba(255, 255, 255, 0.05),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .piano-key-white.active {
+    background: #d7dae0;
+    box-shadow:
+      inset 4px 4px 8px rgba(0, 0, 0, 0.18),
+      inset -4px -4px 8px rgba(255, 255, 255, 0.16),
+      0 0 0 1px rgba(168, 85, 247, 0.28),
+      0 0 16px rgba(91, 33, 182, 0.08);
+    transform: translateY(2px);
+  }
+
+  .piano-key-white.highlighted {
+    background: #a855f7;
+    box-shadow:
+      6px 6px 12px rgba(0, 0, 0, 0.45),
+      -6px -6px 12px rgba(255, 255, 255, 0.05),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: rgba(168, 85, 247, 0.6);
+  }
+
+  .piano-key-black {
+    @apply absolute rounded-b-md cursor-pointer z-10
+           transition-all duration-100 flex items-end justify-center pb-1
+           border border-gray-700/50 select-none;
+    background: #2a2a2f;
+    box-shadow:
+      5px 5px 10px rgba(0, 0, 0, 0.55),
+      -5px -5px 10px rgba(255, 255, 255, 0.03),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .piano-key-black.active {
+    background: #1a1a1f;
+    box-shadow:
+      inset 4px 4px 8px rgba(0, 0, 0, 0.48),
+      inset -4px -4px 8px rgba(255, 255, 255, 0.02),
+      0 0 0 1px rgba(168, 85, 247, 0.12);
+    transform: translateY(2px);
+  }
+
+  .piano-key-black.highlighted {
+    background: #7c3aed;
+    box-shadow:
+      5px 5px 10px rgba(0, 0, 0, 0.55),
+      -5px -5px 10px rgba(255, 255, 255, 0.03),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.08);
+    border-color: rgba(124, 58, 237, 0.6);
+  }
+}
+
+/* Playing animation */
+@keyframes playPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.14); }
+  50% { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
+}
+
+.playing {
+  animation: playPulse 1s ease-in-out infinite;
+}

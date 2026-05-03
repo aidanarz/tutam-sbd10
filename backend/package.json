@@ -2,6 +2,9 @@
   "name": "chord-generator-backend",
   "version": "1.0.0",
   "description": "Chord Generator App - Express.js Backend",
+  "engines": {
+    "node": "22.x"
+  },
   "main": "src/index.js",
   "type": "module",
   "scripts": {

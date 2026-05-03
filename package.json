@@ -2,6 +2,9 @@
   "name": "chord-generator",
   "version": "1.0.0",
   "description": "Full-stack Chord Generator App",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "install:all": "npm install --prefix backend --include=dev && npm install --prefix frontend --include=dev",
     "dev:backend": "npm run dev --prefix backend",

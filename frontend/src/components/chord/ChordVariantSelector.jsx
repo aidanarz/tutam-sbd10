@@ -51,7 +51,7 @@ export default function ChordVariantSelector() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Root:</span>
-          <span className="chord-badge text-lg">{rootNote}</span>
+          <span className="chord-badge text-lg">{String(rootNote)}</span>
         </div>
         <button
           onClick={clearChord}
@@ -98,9 +98,9 @@ export default function ChordVariantSelector() {
 
       {/* Chord variant selector */}
       <div className="space-y-2 flex-1 min-h-0 flex flex-col">
-        <p className="text-xs text-gray-500 flex-shrink-0">Select a chord variant ({chordVariants.length} available):</p>
+        <p className="text-xs text-gray-500 flex-shrink-0">Select a chord variant ({Array.isArray(chordVariants) ? chordVariants.length : 0} available):</p>
         <div className="grid grid-cols-3 gap-2 pb-4">
-          {chordVariants.map((variant, idx) => (
+          {(Array.isArray(chordVariants) ? chordVariants : []).map((variant, idx) => (
             <button
               key={idx}
               onClick={() => handleVariantSelect(variant)}

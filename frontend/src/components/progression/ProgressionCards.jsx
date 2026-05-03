@@ -17,6 +17,7 @@ const MOOD_COLORS = {
 export default function ProgressionCards() {
   const { state, setActiveProgression, setPlaying, setPlayingChord, setHighlightedNotes, setSaveModal } = useApp();
   const { progressions, progressionsLoading, activeProgressionId, isPlaying, playingChordIndex, currentKey, currentScale } = state;
+  const safeProgressions = Array.isArray(progressions) ? progressions : [];
 
   const handlePlay = async (progression) => {
     if (isPlaying) {
@@ -71,7 +72,7 @@ export default function ProgressionCards() {
     );
   }
 
-  if (progressions.length === 0) {
+  if (safeProgressions.length === 0) {
     return (
       <div className="text-center py-10">
         <p className="text-[var(--text-muted)] text-sm">Select a root note to generate progressions</p>
@@ -87,7 +88,7 @@ export default function ProgressionCards() {
         <span className="text-xs text-[var(--text-muted)] capitalize">{currentScale} scale</span>
       </div>
 
-      {progressions.map((prog) => {
+      {safeProgressions.map((prog) => {
         const isActive = activeProgressionId === prog.id;
         const moodColor = MOOD_COLORS[prog.mood] || 'text-gray-400';
 

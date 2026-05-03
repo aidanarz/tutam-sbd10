@@ -6,13 +6,28 @@ import { chordApi, progressionApi } from '../services/api.js';
 
 const AppContext = createContext(null);
 
+function normalizeNoteValue(note) {
+  if (typeof note === 'string') return note;
+  if (note && typeof note === 'object') {
+    return note.symbol || note.name || note.root || note.note || String(note);
+  }
+  return '';
+}
+
+function normalizeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 // ── State shape ──────────────────────────────────────────
 const initialState = {
   // Chord generation (new flow)
   rootNote: null,                 // Single selected root note
+  selectedNotes: [],              // Backward-compatible legacy field
   chordVariants: [],              // All chord variants for root note
   currentChord: null,             // Selected chord variant (full object)
+  detectedChord: null,            // Backward-compatible legacy field
   variantsLoading: false,
+  detectionLoading: false,
 
   // Progressions
   currentKey: null,
@@ -39,23 +54,52 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_ROOT_NOTE':
-      return { ...state, rootNote: action.note, currentChord: null, highlightedNotes: [] };
+      return {
+        ...state,
+        rootNote: normalizeNoteValue(action.note),
+        selectedNotes: normalizeNoteValue(action.note) ? [normalizeNoteValue(action.note)] : [],
+        currentChord: null,
+        detectedChord: null,
+        highlightedNotes: [],
+        progressions: [],
+      };
     case 'CLEAR_ROOT_NOTE':
-      return { ...state, rootNote: null, currentChord: null, chordVariants: [], highlightedNotes: [] };
+      return {
+        ...state,
+        rootNote: null,
+        selectedNotes: [],
+        currentChord: null,
+        detectedChord: null,
+        chordVariants: [],
+        progressions: [],
+        highlightedNotes: [],
+      };
     case 'SET_CHORD_VARIANTS':
-      return { ...state, chordVariants: action.variants, variantsLoading: false };
+      return { ...state, chordVariants: normalizeArray(action.variants), variantsLoading: false };
     case 'SET_VARIANTS_LOADING':
       return { ...state, variantsLoading: action.loading };
     case 'SET_CURRENT_CHORD':
-      return { ...state, currentChord: action.chord, highlightedNotes: action.chord?.notes || [] };
+      return {
+        ...state,
+        currentChord: action.chord || null,
+        detectedChord: action.chord || null,
+        selectedNotes: normalizeArray(action.chord?.notes),
+        highlightedNotes: normalizeArray(action.chord?.notes),
+      };
     case 'SET_PROGRESSIONS':
-      return { ...state, progressions: action.progressions, currentKey: action.key, currentScale: action.scale, progressionsLoading: false };
+      return {
+        ...state,
+        progressions: normalizeArray(action.progressions),
+        currentKey: action.key,
+        currentScale: action.scale,
+        progressionsLoading: false,
+      };
     case 'SET_PROGRESSIONS_LOADING':
       return { ...state, progressionsLoading: action.loading };
     case 'SET_ACTIVE_PROGRESSION':
       return { ...state, activeProgressionId: action.id };
     case 'SET_SAVED_PROGRESSIONS':
-      return { ...state, savedProgressions: action.progressions, savedLoading: false };
+      return { ...state, savedProgressions: normalizeArray(action.progressions), savedLoading: false };
     case 'SET_SAVED_LOADING':
       return { ...state, savedLoading: action.loading };
     case 'ADD_SAVED_PROGRESSION':
@@ -67,7 +111,7 @@ function reducer(state, action) {
     case 'SET_PLAYING_CHORD':
       return { ...state, playingChordIndex: action.index };
     case 'SET_HIGHLIGHTED_NOTES':
-      return { ...state, highlightedNotes: action.notes };
+      return { ...state, highlightedNotes: normalizeArray(action.notes) };
     case 'SET_CURRENT_SCALE':
       return { ...state, currentScale: action.scale };
     case 'SET_ERROR':
@@ -85,11 +129,12 @@ export function AppProvider({ children }) {
 
   // Set root note and fetch available chord variants
   const setRootNote = useCallback(async (note) => {
-    dispatch({ type: 'SET_ROOT_NOTE', note });
+    const normalizedNote = normalizeNoteValue(note);
+    dispatch({ type: 'SET_ROOT_NOTE', note: normalizedNote });
     dispatch({ type: 'SET_VARIANTS_LOADING', loading: true });
     try {
-      const result = await chordApi.getVariants(note);
-      dispatch({ type: 'SET_CHORD_VARIANTS', variants: result.data.variants });
+      const result = await chordApi.getVariants(normalizedNote);
+      dispatch({ type: 'SET_CHORD_VARIANTS', variants: result?.data?.variants || [] });
     } catch (err) {
       dispatch({ type: 'SET_ERROR', error: err.message });
       dispatch({ type: 'SET_VARIANTS_LOADING', loading: false });
@@ -108,16 +153,16 @@ export function AppProvider({ children }) {
 
   // Generate progressions from root note (default: first major chord variant)
   const generateProgressions = useCallback(async (scale = 'major', rootOverride = null) => {
-    const rootToUse = rootOverride || state.currentChord?.root || state.rootNote;
+    const rootToUse = normalizeNoteValue(rootOverride || state.currentChord?.root || state.rootNote);
     if (!rootToUse) return;
     dispatch({ type: 'SET_PROGRESSIONS_LOADING', loading: true });
     try {
       const result = await progressionApi.generate(rootToUse, scale);
       dispatch({
         type: 'SET_PROGRESSIONS',
-        progressions: result.data.progressions,
-        key: result.data.key,
-        scale: result.data.scale,
+        progressions: result?.data?.progressions || [],
+        key: result?.data?.key || rootToUse,
+        scale: result?.data?.scale || scale,
       });
     } catch (err) {
       dispatch({ type: 'SET_ERROR', error: err.message });
@@ -130,7 +175,7 @@ export function AppProvider({ children }) {
     dispatch({ type: 'SET_SAVED_LOADING', loading: true });
     try {
       const result = await progressionApi.getAll();
-      dispatch({ type: 'SET_SAVED_PROGRESSIONS', progressions: result.data });
+      dispatch({ type: 'SET_SAVED_PROGRESSIONS', progressions: result?.data || [] });
     } catch (err) {
       dispatch({ type: 'SET_ERROR', error: err.message });
       dispatch({ type: 'SET_SAVED_LOADING', loading: false });
